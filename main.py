@@ -1,17 +1,28 @@
 from fastapi import FastAPI
-import joblib
+from pydantic import BaseModel
 import pandas as pd
+import joblib
 
-app = FastAPI(title="House Price Prediction API")
+app = FastAPI()
 
-model = joblib.load("house_price_rf_pipeline.pkl")
+model = joblib.load("house_price_xgb.pkl")
 
 @app.get("/")
 def health():
     return {"status": "ok"}
 
+class HouseInput(BaseModel):
+    Location: str
+    Size: float
+    Bedrooms: int
+    Bathrooms: int
+    Condition: str
+    Type: str
+    inflation_time: int
+    Age: int
+
 @app.post("/predict")
-def predict(data: dict):
-    df = pd.DataFrame([data])
-    pred = model.predict(df)
-    return {"predicted_price": float(pred[0])}
+def predict(data: HouseInput):
+    df = pd.DataFrame([data.dict()])
+    prediction = model.predict(df)
+    return {"predicted_price": float(prediction[0])}
